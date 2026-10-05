@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Hitung Cepat Jarimatika</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#16B6B0',
+                        secondary: '#7AE7E0',
+                        bg: '#B7F7FF',
+                        accent: '#FFE66D',
+                        highlight: '#FF9F1C',
+                        dark: '#333333'
+                    },
+                    fontFamily: {
+                        display: ['"Lilita One"', 'cursive'],
+                        body: ['"Nunito"', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #B7F7FF;
+            overscroll-behavior: none;
+            -webkit-user-select: none;
+            user-select: none;
+            touch-action: none;
+        }
+        
+        ::-webkit-scrollbar {
+            display: none;
+        }
+        * {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .page {
+            display: none;
+            width: 100vw;
+            height: 100vh;
+            flex-direction: column;
+            position: absolute;
+            top: 0;
+            left: 0;
+            background-color: #B7F7FF;
+            z-index: 10;
+            overflow: hidden;
+        }
+
+        .page.active {
+            display: flex;
+        }
+
+        .btn-press {
+            transition: transform 0.1s ease, box-shadow 0.1s ease;
+        }
+        
+        .btn-press:active {
+            transform: translateY(4px);
+            box-shadow: 0 0px 0 0 rgba(0,0,0,0.2) !important;
+        }
+
+        .mirrored-view {
+            transform: scaleX(-1);
+        }
+    </style>
+
+    <!-- MediaPipe Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+</head>
+
+<body class="h-screen w-screen overflow-hidden font-body text-dark">
+
+    <!-- LOGIN PAGE (COVER) -->
+    <div id="page-login" class="page active items-center justify-center p-6">
+        <div class="bg-white p-8 rounded-3xl shadow-xl text-center w-full max-w-sm flex flex-col items-center">
+            
+            <a href="https://freeimage.host/"><img src="https://iili.io/B49R5zB.jpg" alt="B49R5zB.jpg" border="0" style="border-radius: 15px; margin: 0 auto; display: block; max-width: 150px; margin-bottom: 24px;"></a>
+            
+            <h1 class="font-display text-3xl text-primary mb-2 tracking-wide uppercase">Hitung Cepat Jarimatika</h1>
+            <p class="mb-6 font-bold text-gray-500">Gemari Tematik Indonesia</p>
+            
+            <input type="text" id="player-name" placeholder="Masukkan Nama Kamu" class="w-full bg-bg border-4 border-secondary rounded-xl px-4 py-3 mb-6 font-bold text-dark focus:outline-none focus:border-primary text-center placeholder-gray-500">
+            
+            <button id="btn-login" class="btn-press bg-highlight text-white w-full font-display text-2xl py-4 rounded-2xl shadow-[0_6px_0_#cc7f16] uppercase tracking-wider">
+                Mulai
+            </button>
+        </div>
+    </div>
+
+    <!-- INSTRUCTION PAGE -->
+    <div id="page-instruction" class="page items-center justify-center p-6">
+        <div class="bg-white p-6 rounded-3xl shadow-xl w-full max-w-md flex flex-col h-[85vh] overflow-hidden">
+            <h2 class="font-display text-3xl text-primary mb-3 text-center uppercase shrink-0">Cara Bermain</h2>
+            
+            <div class="flex-1 overflow-y-auto space-y-3 font-bold text-dark text-center mb-4 px-2">
+                <p class="text-sm">Gunakan jarimu ke arah kamera untuk menjawab soal!</p>
+                
+                <div class="flex flex-row gap-2 justify-center">
+                    <div class="bg-bg p-2.5 rounded-xl border-2 border-secondary flex-1">
+                        <span class="text-primary font-display text-base block mb-0.5">TANGAN KIRI</span>
+                        <span class="text-gray-700 block uppercase text-[10px]">Puluhan (10-90)</span>
+                    </div>
+                    
+                    <div class="bg-accent/40 p-2.5 rounded-xl border-2 border-accent flex-1">
+                        <span class="text-highlight font-display text-base block mb-0.5">TANGAN KANAN</span>
+                        <span class="text-gray-700 block uppercase text-[10px]">Satuan (1-9)</span>
+                    </div>
+                </div>
+
+                <!-- Aturan Jari Satuan & Puluhan -->
+                <div class="text-xs text-left bg-gray-50 p-3 rounded-xl border border-gray-200">
+                    <p class="mb-2 text-center text-primary font-display text-base">Aturan Jari</p>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <span class="font-bold text-highlight block mb-1 text-[11px] uppercase">Kanan (Satuan)</span>
+                            <ul class="list-disc pl-4 space-y-0.5 text-gray-600 font-normal">
+                                <li>Telunjuk = 1</li>
+                                <li>Telunjuk+Tengah = 2</li>
+                                <li>Tiga Jari = 3</li>
+                                <li>Empat Jari = 4</li>
+                                <li class="font-bold text-highlight">Jempol Saja = 5</li>
+                                <li>Jempol+1 Jari = 6</li>
+                                <li>Jempol+4 Jari = 9</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <span class="font-bold text-primary block mb-1 text-[11px] uppercase">Kiri (Puluhan)</span>
+                            <ul class="list-disc pl-4 space-y-0.5 text-gray-600 font-normal">
+                                <li>Telunjuk = 10</li>
+                                <li>Telunjuk+Tengah = 20</li>
+                                <li>Tiga Jari = 30</li>
+                                <li>Empat Jari = 40</li>
+                                <li class="font-bold text-primary">Jempol Saja = 50</li>
+                                <li>Jempol+1 Jari = 60</li>
+                                <li>Jempol+4 Jari = 90</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <button id="btn-instruction-next" class="btn-press bg-primary text-white w-full font-display text-xl py-3.5 rounded-2xl shadow-[0_5px_0_#0e8782] uppercase tracking-wider mt-auto shrink-0">
+                Paham, Lanjut!
+            </button>
+        </div>
+    </div>
+
+    <!-- OPERATION MENU PAGE -->
+    <div id="page-operation" class="page items-center justify-center p-6">
+        <div class="bg-white p-8 rounded-3xl shadow-xl text-center w-full max-w-sm flex flex-col items-center">
+            <h2 class="font-display text-3xl text-primary mb-2 uppercase">Pilih Operasi</h2>
+            <p class="mb-6 font-bold text-gray-500 text-sm">Mau latihan berhitung apa hari ini?</p>
+            
+            <div class="w-full space-y-4 mb-4">
+                <button data-op="+" class="btn-op btn-press bg-primary text-white w-full font-display text-2xl py-4 rounded-2xl shadow-[0_6px_0_#0e8782] uppercase tracking-wider flex items-center justify-center gap-3">
+                    <span class="text-3xl">+</span> Penjumlahan
+                </button>
+                <button data-op="-" class="btn-op btn-press bg-highlight text-white w-full font-display text-2xl py-4 rounded-2xl shadow-[0_6px_0_#cc7f16] uppercase tracking-wider flex items-center justify-center gap-3">
+                    <span class="text-3xl">-</span> Pengurangan
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- DIFFICULTY MENU PAGE -->
+    <div id="page-difficulty" class="page items-center justify-center p-6">
+        <div class="bg-white p-8 rounded-3xl shadow-xl text-center w-full max-w-sm flex flex-col items-center">
+            <h2 class="font-display text-3xl text-primary mb-2 uppercase">Tingkat Kesulitan</h2>
+            <p id="selected-op-title" class="mb-6 font-bold text-gray-500 text-sm">Pilih level tantanganmu</p>
+            
+            <div class="w-full space-y-4 mb-4">
+                <button data-diff="easy" class="btn-diff btn-press bg-emerald-500 text-white w-full font-display text-2xl py-4 rounded-2xl shadow-[0_5px_0_#047857] uppercase tracking-wider">
+                    Easy
+                </button>
+                <button data-diff="medium" class="btn-diff btn-press bg-amber-500 text-white w-full font-display text-2xl py-4 rounded-2xl shadow-[0_5px_0_#b45309] uppercase tracking-wider">
+                    Medium
+                </button>
+                <button data-diff="hard" class="btn-diff btn-press bg-rose-500 text-white w-full font-display text-2xl py-4 rounded-2xl shadow-[0_5px_0_#be123c] uppercase tracking-wider">
+                    Hard
+                </button>
+            </div>
+            
+            <button id="btn-back-to-op" class="text-gray-400 font-bold text-sm hover:text-gray-600 mt-2">← Kembali Pilih Operasi</button>
+        </div>
+    </div>
+
+    <!-- GAME PAGE -->
+    <div id="page-game" class="page bg-dark relative">
+        
+        <!-- Camera & Canvas -->
+        <div class="absolute inset-0 w-full h-full">
+            <video id="input-video" class="absolute inset-0 w-full h-full object-cover mirrored-view" playsinline></video>
+            <canvas id="output-canvas" class="absolute inset-0 w-full h-full object-cover mirrored-view"></canvas>
+        </div>
+
+        <!-- Top Header Layout -->
+        <div class="absolute top-6 left-0 right-0 flex justify-center z-20 px-4 pointer-events-none">
+            <div class="w-full max-w-md space-y-3">
+                <!-- User Info & Timer Badge -->
+                <div class="bg-white/95 backdrop-blur px-5 py-3 rounded-3xl border-4 border-primary shadow-lg flex justify-between items-center pointer-events-auto">
+                    <span id="player-display-header" class="font-display text-xl text-dark">Hai, ...</span>
+                    <div class="bg-accent px-4 py-1.5 rounded-2xl border-2 border-white shadow flex items-center gap-1.5">
+                        <span class="text-xs font-extrabold text-dark/70 uppercase">Waktu:</span>
+                        <span id="game-timer-badge" class="font-display text-lg text-highlight">0.0 dtk</span>
+                    </div>
+                </div>
+
+                <!-- Question Box -->
+                <div class="bg-white/95 backdrop-blur p-4 rounded-3xl border-4 border-accent shadow-lg text-center">
+                    <div class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">
+                        PERTANYAAN <span id="question-progress" class="text-primary ml-1">(Soal 1/5)</span>
+                    </div>
+                    <div id="display-question" class="font-display text-4xl text-dark tracking-wide">
+                        Siap...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Layout: Detected HUD & Akhiri Permainan Button -->
+        <div class="absolute bottom-6 left-0 right-0 flex flex-col items-center z-20 px-4 gap-3 pointer-events-none">
+            <!-- Detected HUD -->
+            <div class="bg-white/95 backdrop-blur border-4 border-primary px-8 py-3 rounded-3xl shadow-xl text-center min-w-[200px] pointer-events-auto">
+                <div class="text-xs font-extrabold text-dark/60 uppercase mb-0.5 tracking-widest">TERDETEKSI</div>
+                <div id="display-detected" class="font-display text-5xl text-highlight leading-none">
+                    0
+                </div>
+            </div>
+
+            <!-- End Game / Back Button -->
+            <button id="btn-game-back" class="btn-press bg-rose-500 hover:bg-rose-600 text-white font-display text-base px-8 py-2.5 rounded-2xl shadow-[0_4px_0_#9f1239] uppercase tracking-wider pointer-events-auto">
+                Akhiri Permainan
+            </button>
+        </div>
+
+        <!-- Initializing Overlay -->
+        <div id="loading-overlay" class="absolute inset-0 bg-bg flex flex-col items-center justify-center z-30">
+            <div class="font-display text-4xl text-primary mb-4 animate-pulse">Menyiapkan Kamera...</div>
+            <div class="w-12 h-12 border-4 border-secondary border-t-primary rounded-full animate-spin"></div>
+            <div class="mt-4 font-bold text-gray-500 text-sm">Pastikan izin kamera diberikan</div>
+        </div>
+    </div>
+
+    <!-- RESULT PAGE -->
+    <div id="page-result" class="page items-center justify-center p-6 overflow-y-auto">
+        <div class="bg-white p-6 rounded-3xl shadow-xl w-full max-w-md flex flex-col my-auto">
+            <h2 class="font-display text-4xl text-primary mb-1 text-center uppercase">Permainan Selesai!</h2>
+            <p id="result-player-info" class="text-center font-bold text-gray-500 mb-4">Hebat, Kerja Bagus!</p>
+            
+            <div class="bg-bg p-4 rounded-2xl border-2 border-secondary text-center mb-6">
+                <span class="text-xs font-bold text-gray-500 uppercase tracking-widest block mb-1">Waktu Total</span>
+                <span id="final-time" class="font-display text-5xl text-highlight">0.0 dtk</span>
+            </div>
+
+            <!-- History & Ranking Waktu Tercepat -->
+            <div class="mb-6">
+                <h3 class="font-display text-xl text-dark mb-2 uppercase flex items-center justify-between">
+                    <span>Ranking Waktu Tercepat</span>
+                </h3>
+                <div id="history-container" class="space-y-2">
+                    <!-- Dynamic History inserted here -->
+                </div>
+            </div>
+            
+            <div class="space-y-3">
+                <button id="btn-play-again" class="btn-press bg-highlight text-white w-full font-display text-xl py-3 rounded-2xl shadow-[0_5px_0_#cc7f16] uppercase tracking-wider">
+                    Main Lagi
+                </button>
+                <button id="btn-main-menu" class="btn-press bg-primary text-white w-full font-display text-xl py-3 rounded-2xl shadow-[0_5px_0_#0e8782] uppercase tracking-wider">
+                    Pilih Menu Lain
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const pages = {
+            login: document.getElementById('page-login'),
+            instruction: document.getElementById('page-instruction'),
+            operation: document.getElementById('page-operation'),
+            difficulty: document.getElementById('page-difficulty'),
+            game: document.getElementById('page-game'),
+            result: document.getElementById('page-result')
+        };
+        
+        const displayQuestion = document.getElementById('display-question');
+        const displayDetected = document.getElementById('display-detected');
+        const loadingOverlay = document.getElementById('loading-overlay');
+        const videoElement = document.getElementById('input-video');
+        const canvasElement = document.getElementById('output-canvas');
+        const canvasCtx = canvasElement.getContext('2d');
+
+        // Game State Variables
+        let playerName = "";
+        let selectedOperation = '+'; 
+        let selectedDifficulty = 'easy'; 
+        let currentQuestionIndex = 0;
+        let totalQuestions = 5;
+        let gameStartTime = 0;
+        let totalGameTime = 0;
+        let currentAnswer = -1;
+        let gameActive = false;
+        let audioCtx;
+        let lastDetectedValue = -1;
+        let holdFrameCount = 0;
+        let timerInterval = null;
+        let handsInstance = null;
+        let cameraInstance = null;
+
+        // Show specific page helper
+        function showPage(pageName) {
+            Object.values(pages).forEach(p => p.classList.remove('active'));
+            pages[pageName].classList.add('active');
+        }
+
+        // Navigation Event Listeners
+        document.getElementById('btn-login').addEventListener('click', () => {
+            const inputName = document.getElementById('player-name').value.trim();
+            if (!inputName) {
+                alert('Silakan masukkan nama kamu terlebih dahulu!');
+                return;
+            }
+            playerName = inputName;
+            showPage('instruction');
+        });
+
+        document.getElementById('btn-instruction-next').addEventListener('click', () => {
+            showPage('operation');
+        });
+
+        document.querySelectorAll('.btn-op').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                selectedOperation = e.currentTarget.getAttribute('data-op');
+                const opName = selectedOperation === '+' ? 'Penjumlahan' : 'Pengurangan';
+                document.getElementById('selected-op-title').textContent = `Operasi: ${opName}`;
+                showPage('difficulty');
+            });
+        });
+
+        document.querySelectorAll('.btn-diff').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                selectedDifficulty = e.currentTarget.getAttribute('data-diff');
+                startGameSession();
+            });
+        });
+
+        document.getElementById('btn-back-to-op').addEventListener('click', () => {
+            showPage('operation');
+        });
+
+        document.getElementById('btn-play-again').addEventListener('click', () => {
+            startGameSession();
+        });
+
+        document.getElementById('btn-main-menu').addEventListener('click', () => {
+            showPage('operation');
+        });
+
+        // Akhiri Permainan Button during Game
+        document.getElementById('btn-game-back').addEventListener('click', () => {
+            gameActive = false;
+            if (timerInterval) clearInterval(timerInterval);
+            showPage('difficulty');
+        });
+
+        function startGameSession() {
+            currentQuestionIndex = 0;
+            showPage('game');
+            
+            document.getElementById('player-display-header').textContent = `Hai, ${playerName}`;
+            
+            gameStartTime = Date.now();
+            
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                if (gameActive) {
+                    let elapsed = ((Date.now() - gameStartTime) / 1000).toFixed(1);
+                    document.getElementById('game-timer-badge').textContent = `${elapsed} dtk`;
+                }
+            }, 100);
+
+            if (!cameraInstance) {
+                initGame();
+            } else {
+                gameActive = true;
+                generateQuestion();
+            }
+        }
+
+        // Audio System (Synthesized Ding)
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function playDingSound() {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(1760, audioCtx.currentTime + 0.1); 
+            
+            gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+            gainNode.gain.linearRampToValueAtTime(0.5, audioCtx.currentTime + 0.02);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+            
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.35);
+        }
+
+        // Question Generation (Strictly NO 0 anywhere)
+        function generateQuestion() {
+            let expression = "";
+            let nextAnswer = 0;
+            
+            if (selectedOperation === '+') {
+                if (selectedDifficulty === 'easy') {
+                    let aTens = Math.floor(Math.random() * 4) + 1; 
+                    let aUnits = Math.floor(Math.random() * 4) + 1; 
+                    let a_val = aTens * 10 + aUnits;
+                    
+                    let bTens = Math.floor(Math.random() * (5 - aTens)) + 1; 
+                    let bUnits = Math.floor(Math.random() * (5 - aUnits)) + 1; 
+                    let b_val = bTens * 10 + bUnits;
+                    
+                    nextAnswer = a_val + b_val;
+                    expression = `${a_val} + ${b_val} = ?`;
+                } else if (selectedDifficulty === 'medium') {
+                    let termsCount = Math.random() > 0.5 ? 2 : 3;
+                    if (termsCount === 2) {
+                        let a = Math.floor(Math.random() * 40) + 11;
+                        let b = Math.floor(Math.random() * (80 - a)) + 1;
+                        nextAnswer = a + b;
+                        expression = `${a} + ${b} = ?`;
+                    } else {
+                        let a = Math.floor(Math.random() * 20) + 11;
+                        let b = Math.floor(Math.random() * 20) + 11;
+                        let c = Math.floor(Math.random() * (90 - (a + b))) + 1;
+                        nextAnswer = a + b + c;
+                        expression = `${a} + ${b} + ${c} = ?`;
+                    }
+                } else {
+                    let termsCount = Math.floor(Math.random() * 2) + 4; 
+                    let nums = [];
+                    let currentSum = 0;
+                    for (let i = 0; i < termsCount; i++) {
+                        let maxVal = Math.min(20, 95 - currentSum - (termsCount - i));
+                        if (maxVal < 1) maxVal = 1;
+                        let val = Math.floor(Math.random() * maxVal) + 1;
+                        nums.push(val);
+                        currentSum += val;
+                    }
+                    nextAnswer = currentSum;
+                    expression = nums.join(' + ') + ' = ?';
+                }
+            } else {
+                if (selectedDifficulty === 'easy') {
+                    let aTens = Math.floor(Math.random() * 4) + 5; 
+                    let aUnits = Math.floor(Math.random() * 4) + 5; 
+                    let a_val = aTens * 10 + aUnits;
+                    
+                    let bTens = Math.floor(Math.random() * (aTens - 1)) + 1; 
+                    let bUnits = Math.floor(Math.random() * (aUnits - 1)) + 1; 
+                    let b_val = bTens * 10 + bUnits;
+                    
+                    nextAnswer = a_val - b_val;
+                    expression = `${a_val} - ${b_val} = ?`;
+                } else if (selectedDifficulty === 'medium') {
+                    let termsCount = Math.random() > 0.5 ? 2 : 3;
+                    if (termsCount === 2) {
+                        let a = Math.floor(Math.random() * 50) + 30; 
+                        let b = Math.floor(Math.random() * (a - 10)) + 5; 
+                        nextAnswer = a - b;
+                        expression = `${a} - ${b} = ?`;
+                    } else {
+                        let a = Math.floor(Math.random() * 20) + 60; 
+                        let b = Math.floor(Math.random() * 15) + 5;
+                        let c = Math.floor(Math.random() * (a - b - 10)) + 5;
+                        nextAnswer = a - b - c;
+                        expression = `${a} - ${b} - ${c} = ?`;
+                    }
+                } else {
+                    let termsCount = Math.floor(Math.random() * 2) + 4; 
+                    let a = Math.floor(Math.random() * 20) + 70; 
+                    let exprParts = [a];
+                    let currentVal = a;
+                    for (let i = 1; i < termsCount; i++) {
+                        let subVal = Math.floor(Math.random() * 12) + 1; 
+                        currentVal -= subVal;
+                        exprParts.push('-', subVal);
+                    }
+                    nextAnswer = currentVal;
+                    expression = exprParts.join(' ') + ' = ?';
+                }
+            }
+            
+            if (nextAnswer <= 0 || nextAnswer > 99 || expression.includes(' 0 ') || expression.startsWith('0 ') || expression.endsWith(' 0')) {
+                nextAnswer = 15;
+                expression = "12 + 3 = ?";
+            }
+
+            currentAnswer = nextAnswer;
+            displayQuestion.textContent = expression;
+            displayDetected.textContent = "0";
+            lastDetectedValue = -1;
+            holdFrameCount = 0;
+            
+            document.getElementById('question-progress').textContent = `(Soal ${currentQuestionIndex + 1}/${totalQuestions})`;
+        }
+
+        function nextQuestionOrFinish() {
+            currentQuestionIndex++;
+            
+            if (currentQuestionIndex < totalQuestions) {
+                generateQuestion();
+            } else {
+                gameActive = false;
+                if (timerInterval) clearInterval(timerInterval);
+                totalGameTime = ((Date.now() - gameStartTime) / 1000).toFixed(1);
+                saveGameHistory();
+                showResultPage();
+            }
+        }
+
+        function saveGameHistory() {
+            const historyItem = {
+                name: playerName,
+                time: parseFloat(totalGameTime),
+                timeFormatted: `${totalGameTime} dtk`,
+                operation: selectedOperation === '+' ? 'Penjumlahan' : 'Pengurangan',
+                difficulty: selectedDifficulty.toUpperCase(),
+                date: new Date().toLocaleDateString('id-ID', { hour: '2-digit', minute: '2-digit' })
+            };
+            
+            let history = JSON.parse(localStorage.getItem('jarimatika_history_time') || '[]');
+            history.unshift(historyItem);
+            history.sort((a, b) => a.time - b.time);
+            if (history.length > 10) history = history.slice(0, 10);
+            localStorage.setItem('jarimatika_history_time', JSON.stringify(history));
+        }
+
+        function showResultPage() {
+            document.getElementById('result-player-info').textContent = `${playerName} • ${selectedOperation === '+' ? 'Penjumlahan' : 'Pengurangan'} (${selectedDifficulty.toUpperCase()})`;
+            document.getElementById('final-time').textContent = `${totalGameTime} dtk`;
+            
+            const historyContainer = document.getElementById('history-container');
+            let history = JSON.parse(localStorage.getItem('jarimatika_history_time') || '[]');
+            
+            if (history.length === 0) {
+                historyContainer.innerHTML = `<p class="text-gray-400 text-sm italic text-center py-2">Belum ada riwayat permainan.</p>`;
+            } else {
+                let html = `<div class="space-y-2 max-h-36 overflow-y-auto pr-1">`;
+                history.forEach((item, index) => {
+                    html += `
+                        <div class="flex justify-between items-center bg-gray-50 p-2.5 rounded-xl border border-gray-200 text-sm">
+                            <div class="flex items-center gap-2">
+                                <span class="font-display text-primary text-base">#${index + 1}</span>
+                                <div>
+                                    <p class="font-bold text-dark">${item.name}</p>
+                                    <p class="text-xs text-gray-500">${item.operation} (${item.difficulty}) • ${item.date}</p>
+                                </div>
+                            </div>
+                            <div class="font-display text-highlight text-lg">${item.timeFormatted}</div>
+                        </div>
+                    `;
+                });
+                html += `</div>`;
+                historyContainer.innerHTML = html;
+            }
+            
+            showPage('result');
+        }
+
+        // ========================================================
+        // SENSOR KODE TETAP UTUH (SESUAI PERMINTAAN TANPA DIUBAH)
+        // ========================================================
+        function getDistance(p1, p2) {
+            return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
+        }
+
+        function calculateJarimatikaValue(landmarks, handLabel) {
+            const isIndexOpen = getDistance(landmarks[8], landmarks[0]) > getDistance(landmarks[6], landmarks[0]);
+            const isMiddleOpen = getDistance(landmarks[12], landmarks[0]) > getDistance(landmarks[10], landmarks[0]);
+            const isRingOpen = getDistance(landmarks[16], landmarks[0]) > getDistance(landmarks[14], landmarks[0]);
+            const isPinkyOpen = getDistance(landmarks[20], landmarks[0]) > getDistance(landmarks[18], landmarks[0]);
+            
+            const isThumbOpen = getDistance(landmarks[4], landmarks[17]) > getDistance(landmarks[3], landmarks[17]);
+
+            let value = 0;
+            if (isThumbOpen) value += 5;
+            if (isIndexOpen) value += 1;
+            if (isMiddleOpen) value += 1;
+            if (isRingOpen) value += 1;
+            if (isPinkyOpen) value += 1;
+
+            if (handLabel === 'Right') {
+                return value * 10;
+            } else {
+                return value; 
+            }
+        }
+
+        function onResults(results) {
+            if (!gameActive) return;
+
+            if (loadingOverlay.style.display !== 'none') {
+                loadingOverlay.style.display = 'none';
+                generateQuestion();
+            }
+
+            canvasElement.width = videoElement.videoWidth;
+            canvasElement.height = videoElement.videoHeight;
+            canvasCtx.save();
+            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+
+            let totalDetected = 0;
+
+            if (results.multiHandLandmarks && results.multiHandedness) {
+                for (let i = 0; i < results.multiHandLandmarks.length; i++) {
+                    const landmarks = results.multiHandLandmarks[i];
+                    const label = results.multiHandedness[i].label;
+
+                    drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS, {color: '#FFFFFF', lineWidth: 4});
+                    drawLandmarks(canvasCtx, landmarks, {color: '#FF9F1C', lineWidth: 2, radius: 5});
+
+                    totalDetected += calculateJarimatikaValue(landmarks, label);
+                }
+            }
+            
+            canvasCtx.restore();
+
+            if (totalDetected !== lastDetectedValue) {
+                displayDetected.textContent = totalDetected;
+                lastDetectedValue = totalDetected;
+                holdFrameCount = 0;
+            }
+
+            if (totalDetected === currentAnswer && currentAnswer !== -1) {
+                holdFrameCount++;
+                if (holdFrameCount > 2) {
+                    playDingSound();
+                    nextQuestionOrFinish();
+                }
+            }
+        }
+
+        async function initGame() {
+            initAudio();
+            gameActive = true;
+
+            const hands = new Hands({locateFile: (file) => {
+                return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
+            }});
+            
+            handsInstance = hands;
+            
+            hands.setOptions({
+                maxNumHands: 2,
+                modelComplexity: 1,
+                minDetectionConfidence: 0.65,
+                minTrackingConfidence: 0.65
+            });
+            
+            hands.onResults(onResults);
+
+            const camera = new Camera(videoElement, {
+                onFrame: async () => {
+                    if (gameActive) {
+                        await hands.send({image: videoElement});
+                    }
+                },
+                width: 640,
+                height: 480
+            });
+            
+            cameraInstance = camera;
+            
+            camera.start().catch(err => {
+                loadingOverlay.innerHTML = `
+                    <div class="text-red-500 font-display text-2xl text-center px-4">
+                        Gagal mengakses kamera.<br>Harap izinkan akses kamera di browser Anda.
+                    </div>`;
+            });
+        }
+    </script>
+</body>
+</html>
